@@ -320,6 +320,12 @@ public class TrainingManager : MonoBehaviour
             isPaused = false;
             PlaySection(currentSection);
         }
+        else
+        {
+            // Last section — start demonstration
+            isPaused = false;
+            StartDemonstration();
+        }
     }
 
     public void OnPreviousPressed()
