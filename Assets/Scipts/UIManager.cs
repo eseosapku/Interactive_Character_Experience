@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class UIManager : MonoBehaviour
 {
@@ -39,8 +40,7 @@ public class UIManager : MonoBehaviour
         StartCoroutine(SwitchAfterDelay(nextScreen, 0.6f));
     }
 
-    System.Collections.IEnumerator SwitchAfterDelay(
-        GameObject nextScreen, float delay)
+    IEnumerator SwitchAfterDelay(GameObject nextScreen, float delay)
     {
         yield return new WaitForSeconds(delay);
 
@@ -64,7 +64,8 @@ public class UIManager : MonoBehaviour
         Animator anim = screen.GetComponent<Animator>();
         if (anim != null && anim.runtimeAnimatorController != null)
         {
-            Debug.Log("Setting " + screen.name + " IsVisible to " + visible);
+            Debug.Log("Setting " + screen.name +
+                " IsVisible to " + visible);
             anim.SetBool("IsVisible", visible);
         }
     }

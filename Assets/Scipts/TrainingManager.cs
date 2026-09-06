@@ -26,10 +26,6 @@ public class TrainingManager : MonoBehaviour
     public AudioSource marcusAudioSource;
     public AudioClip marcusSpeechClip;
 
-    [Header("Start Positions")]
-    public Transform jamieStartPosition;
-    public Transform alexStartPosition;
-
     private MarcusSection[] marcusSections;
     private int currentSection = 0;
     private bool isPaused = false;
@@ -99,6 +95,8 @@ public class TrainingManager : MonoBehaviour
     // ── Called when user enters Screen3 ───────
     public void StartTraining()
     {
+        // Show Marcus and diagram
+        // Characters stay exactly where placed in scene
         diagramBoard.SetActive(true);
         marcusCharacter.SetActive(true);
         jamieCharacter.SetActive(false);
@@ -107,7 +105,6 @@ public class TrainingManager : MonoBehaviour
         currentSection = 0;
         isPaused = false;
 
-        CameraManager.Instance.MoveTOMarcusView();
         PlaySection(currentSection);
     }
 
@@ -128,7 +125,7 @@ public class TrainingManager : MonoBehaviour
         // Stop audio
         marcusAudioSource.Stop();
 
-        // Reset animator speed and triggers
+        // Reset animator
         marcusAnimator.speed = 1f;
         marcusAnimator.ResetTrigger("OnTalk");
         marcusAnimator.ResetTrigger("OnPoint");
@@ -139,7 +136,7 @@ public class TrainingManager : MonoBehaviour
         timelineSlider.value =
             (float)index / (marcusSections.Length - 1);
 
-        // Play animation trigger
+        // Play animation
         marcusAnimator.SetTrigger(section.trigger);
 
         // Play audio from correct timestamp
@@ -169,11 +166,11 @@ public class TrainingManager : MonoBehaviour
         marcusAudioSource.Stop();
         marcusAnimator.speed = 0f;
 
-        // Prompt user to continue
+        // Prompt user
         stepTitleText.text = stepTitleText.text +
             " — Press Next Step to continue";
 
-        // If last section start demonstration
+        // If last Marcus section auto start demo
         if (currentSection >= marcusSections.Length - 1)
         {
             yield return new WaitForSeconds(1f);
@@ -196,26 +193,20 @@ public class TrainingManager : MonoBehaviour
         marcusCharacter.SetActive(false);
         diagramBoard.SetActive(false);
 
-        // Show Jamie and Alex
+        // Show Jamie and Alex exactly where placed in scene
         jamieCharacter.SetActive(true);
         alexCharacter.SetActive(true);
-
-        jamieCharacter.transform.position = jamieStartPosition.position;
-        jamieCharacter.transform.rotation = jamieStartPosition.rotation;
-        alexCharacter.transform.position = alexStartPosition.position;
-        alexCharacter.transform.rotation = alexStartPosition.rotation;
 
         stepTitleText.text = "Demonstration — Watch Carefully";
         timelineSlider.value = 1f;
 
-        CameraManager.Instance.MoveToDemonstrationView();
         activeCoroutine = StartCoroutine(DemonstrationSequence());
     }
 
     // ── Full CPR demonstration sequence ───────
     IEnumerator DemonstrationSequence()
     {
-        // Both walking together
+        // Both start walking in place
         stepTitleText.text = "Both walking in...";
         jamieAnimator.Play("Standard Walk");
         alexAnimator.Play("Standard Walk");
@@ -226,21 +217,12 @@ public class TrainingManager : MonoBehaviour
         jamieAnimator.SetTrigger("OnCollapse");
         yield return new WaitForSeconds(2f);
 
-        // Alex walks over to Jamie
+        // Alex kneels next to Jamie
+        // No position change — Alex is already
+        // placed next to Jamie in the scene
         stepTitleText.text = "Alex rushing to help...";
-        alexAnimator.Play("Standard Walk");
-        yield return StartCoroutine(MoveToPosition(
-            alexCharacter,
-            jamieCharacter.transform.position +
-                new Vector3(0.5f, 0f, 0f),
-            2f
-        ));
+        yield return new WaitForSeconds(1f);
 
-        // Alex faces Jamie
-        alexCharacter.transform.rotation =
-            Quaternion.Euler(0, 90, 0);
-
-        // Alex kneels
         stepTitleText.text = "Alex kneeling down...";
         alexAnimator.SetTrigger("OnKneel");
         yield return new WaitForSeconds(2f);
@@ -255,33 +237,11 @@ public class TrainingManager : MonoBehaviour
         jamieAnimator.SetTrigger("OnRevived");
         yield return new WaitForSeconds(2f);
 
-        // Jamie stands up
         stepTitleText.text = "Patient revived successfully!";
         yield return new WaitForSeconds(2f);
 
         // Go to completion
         UIManager.Instance.GoToCompletion();
-    }
-
-    // ── Smoothly moves character to position ──
-    IEnumerator MoveToPosition(
-        GameObject character,
-        Vector3 targetPos,
-        float duration)
-    {
-        Vector3 startPos = character.transform.position;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-            character.transform.position =
-                Vector3.Lerp(startPos, targetPos, t);
-            yield return null;
-        }
-
-        character.transform.position = targetPos;
     }
 
     // ── Button handlers ────────────────────────
