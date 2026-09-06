@@ -29,6 +29,7 @@ public class TrainingManager : MonoBehaviour
     private MarcusSection[] marcusSections;
     private int currentSection = 0;
     private bool isPaused = false;
+    private bool isInDemonstration = false;
     private Coroutine activeCoroutine;
 
     void Awake()
@@ -38,14 +39,12 @@ public class TrainingManager : MonoBehaviour
 
     void Start()
     {
-        // Stop audio playing on Unity play button
         if (marcusAudioSource != null)
         {
             marcusAudioSource.Stop();
             marcusAudioSource.playOnAwake = false;
         }
 
-        // Hide everything at start
         if (diagramBoard != null) diagramBoard.SetActive(false);
         if (marcusCharacter != null) marcusCharacter.SetActive(false);
         if (jamieCharacter != null) jamieCharacter.SetActive(false);
@@ -92,64 +91,61 @@ public class TrainingManager : MonoBehaviour
         };
     }
 
-    // ── Called when user enters Screen3 ───────
     public void StartTraining()
     {
-        // Show Marcus and diagram
-        // Characters stay exactly where placed in scene
         diagramBoard.SetActive(true);
         marcusCharacter.SetActive(true);
         jamieCharacter.SetActive(false);
         alexCharacter.SetActive(false);
 
+        isInDemonstration = false;
         currentSection = 0;
         isPaused = false;
 
         PlaySection(currentSection);
     }
 
-    // ── Plays a specific section ───────────────
     void PlaySection(int index)
     {
         if (index < 0 || index >= marcusSections.Length) return;
 
+        // Coming back from demonstration
+        // make sure correct objects visible
+        isInDemonstration = false;
+        diagramBoard.SetActive(true);
+        marcusCharacter.SetActive(true);
+        jamieCharacter.SetActive(false);
+        alexCharacter.SetActive(false);
+
         MarcusSection section = marcusSections[index];
 
-        // Stop any running coroutine
         if (activeCoroutine != null)
         {
             StopCoroutine(activeCoroutine);
             activeCoroutine = null;
         }
 
-        // Stop audio
         marcusAudioSource.Stop();
 
-        // Reset animator
         marcusAnimator.speed = 1f;
         marcusAnimator.ResetTrigger("OnTalk");
         marcusAnimator.ResetTrigger("OnPoint");
         marcusAnimator.ResetTrigger("OnWalk");
 
-        // Update UI
         stepTitleText.text = section.stepTitle;
         timelineSlider.value =
             (float)index / (marcusSections.Length - 1);
 
-        // Play animation
         marcusAnimator.SetTrigger(section.trigger);
 
-        // Play audio from correct timestamp
         marcusAudioSource.clip = marcusSpeechClip;
         marcusAudioSource.time = section.audioStart;
         marcusAudioSource.Play();
 
-        // Start section timer
         float duration = section.audioEnd - section.audioStart;
         activeCoroutine = StartCoroutine(SectionTimer(duration));
     }
 
-    // ── Counts down section duration ──────────
     IEnumerator SectionTimer(float duration)
     {
         float elapsed = 0f;
@@ -158,28 +154,23 @@ public class TrainingManager : MonoBehaviour
         {
             if (!isPaused)
                 elapsed += Time.deltaTime;
-
             yield return null;
         }
 
-        // Stop audio and freeze animation
         marcusAudioSource.Stop();
         marcusAnimator.speed = 0f;
 
-        // Prompt user
         stepTitleText.text = stepTitleText.text +
             " — Press Next Step to continue";
 
-        // If last Marcus section auto start demo
         if (currentSection >= marcusSections.Length - 1)
         {
             yield return new WaitForSeconds(1f);
-            StartDemonstration();
+            BeginDemonstration();
         }
     }
 
-    // ── Starts Jamie and Alex demonstration ───
-    void StartDemonstration()
+    void BeginDemonstration()
     {
         if (activeCoroutine != null)
         {
@@ -187,15 +178,21 @@ public class TrainingManager : MonoBehaviour
             activeCoroutine = null;
         }
 
-        marcusAudioSource.Stop();
+        isInDemonstration = true;
+        isPaused = false;
 
-        // Hide Marcus and diagram
+        marcusAudioSource.Stop();
         marcusCharacter.SetActive(false);
         diagramBoard.SetActive(false);
 
-        // Show Jamie and Alex exactly where placed in scene
         jamieCharacter.SetActive(true);
         alexCharacter.SetActive(true);
+
+        // Reset animators to default state
+        jamieAnimator.Rebind();
+        jamieAnimator.Update(0f);
+        alexAnimator.Rebind();
+        alexAnimator.Update(0f);
 
         stepTitleText.text = "Demonstration — Watch Carefully";
         timelineSlider.value = 1f;
@@ -203,44 +200,47 @@ public class TrainingManager : MonoBehaviour
         activeCoroutine = StartCoroutine(DemonstrationSequence());
     }
 
-    // ── Full CPR demonstration sequence ───────
     IEnumerator DemonstrationSequence()
     {
-        // Both start walking in place
+        // Both walking from default state
         stepTitleText.text = "Both walking in...";
-        jamieAnimator.Play("Standard Walk");
-        alexAnimator.Play("Standard Walk");
-        yield return new WaitForSeconds(3f);
+        jamieAnimator.speed = 1f;
+        alexAnimator.speed = 1f;
+
+        // Give walk animation time to fully play
+        yield return new WaitForSeconds(5f);
+        while (isPaused) yield return null;
 
         // Jamie collapses
         stepTitleText.text = "Jamie has collapsed!";
         jamieAnimator.SetTrigger("OnCollapse");
-        yield return new WaitForSeconds(2f);
 
-        // Alex kneels next to Jamie
-        // No position change — Alex is already
-        // placed next to Jamie in the scene
-        stepTitleText.text = "Alex rushing to help...";
-        yield return new WaitForSeconds(1f);
+        // Wait for full collapse animation to finish
+        yield return new WaitForSeconds(4f);
+        while (isPaused) yield return null;
 
+        // Alex kneels
         stepTitleText.text = "Alex kneeling down...";
         alexAnimator.SetTrigger("OnKneel");
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(3f);
+        while (isPaused) yield return null;
 
-        // Alex performs CPR
+        // Alex does CPR — Jamie receives at same time
         stepTitleText.text = "Performing CPR — 30 compressions!";
         alexAnimator.SetTrigger("OnCPR");
-        yield return new WaitForSeconds(6f);
+        jamieAnimator.SetTrigger("OnReceiveCPR");
+        yield return new WaitForSeconds(7f);
+        while (isPaused) yield return null;
 
-        // Jamie responds
+        // Jamie stands up
         stepTitleText.text = "Patient responding!";
         jamieAnimator.SetTrigger("OnRevived");
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(4f);
+        while (isPaused) yield return null;
 
         stepTitleText.text = "Patient revived successfully!";
         yield return new WaitForSeconds(2f);
 
-        // Go to completion
         UIManager.Instance.GoToCompletion();
     }
 
@@ -248,9 +248,19 @@ public class TrainingManager : MonoBehaviour
 
     public void OnPlayPressed()
     {
-        if (isPaused)
+        if (!isPaused) return;
+
+        isPaused = false;
+
+        if (isInDemonstration)
         {
-            isPaused = false;
+            // Resume demonstration animators
+            jamieAnimator.speed = 1f;
+            alexAnimator.speed = 1f;
+        }
+        else
+        {
+            // Resume Marcus
             marcusAnimator.speed = 1f;
             marcusAudioSource.UnPause();
         }
@@ -259,12 +269,27 @@ public class TrainingManager : MonoBehaviour
     public void OnPausePressed()
     {
         isPaused = true;
-        marcusAnimator.speed = 0f;
-        marcusAudioSource.Pause();
+
+        if (isInDemonstration)
+        {
+            // Pause demonstration animators
+            jamieAnimator.speed = 0f;
+            alexAnimator.speed = 0f;
+        }
+        else
+        {
+            // Pause Marcus
+            marcusAnimator.speed = 0f;
+            marcusAudioSource.Pause();
+        }
     }
 
     public void OnNextPressed()
     {
+        // If in demonstration next does nothing
+        // demonstration plays through automatically
+        if (isInDemonstration) return;
+
         if (currentSection < marcusSections.Length - 1)
         {
             currentSection++;
@@ -273,18 +298,27 @@ public class TrainingManager : MonoBehaviour
         }
         else
         {
-            // Last section — start demonstration
             isPaused = false;
-            StartDemonstration();
+            BeginDemonstration();
         }
     }
 
     public void OnPreviousPressed()
     {
+        isPaused = false;
+
+        if (isInDemonstration)
+        {
+            // Go back to last Marcus section
+            isInDemonstration = false;
+            currentSection = marcusSections.Length - 1;
+            PlaySection(currentSection);
+            return;
+        }
+
         if (currentSection > 0)
         {
             currentSection--;
-            isPaused = false;
             PlaySection(currentSection);
         }
     }

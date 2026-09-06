@@ -4303,11 +4303,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 24250d661aff35440b11dcf76f9b2c45, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3
+      value: -1.9
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 24250d661aff35440b11dcf76f9b2c45, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.31
+      value: 0.784
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 24250d661aff35440b11dcf76f9b2c45, type: 3}
       propertyPath: m_LocalPosition.z
@@ -8508,7 +8508,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 907e345d82b47814fb2ef8e11f9dfd92, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.31
+      value: 0.784
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 907e345d82b47814fb2ef8e11f9dfd92, type: 3}
       propertyPath: m_LocalPosition.z
@@ -8598,8 +8598,6 @@ MonoBehaviour:
   timelineSlider: {fileID: 940335716}
   marcusAudioSource: {fileID: 396823053}
   marcusSpeechClip: {fileID: 8300000, guid: 0173f443b4f1b5941b6039a75ca8fef3, type: 3}
-  jamieStartPosition: {fileID: 0}
-  alexStartPosition: {fileID: 0}
 --- !u!4 &2067519587
 Transform:
   m_ObjectHideFlags: 0
