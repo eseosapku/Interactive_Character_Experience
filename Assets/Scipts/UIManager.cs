@@ -44,17 +44,18 @@ public class UIManager : MonoBehaviour
 
     public void ShowScreen(GameObject nextScreen)
     {
-        // Fade out current screen
         if (activeScreen != null)
             SetVisible(activeScreen, false);
 
-        // Switch after outro plays
-        StartCoroutine(SwitchAfterDelay(nextScreen, 0.3f));
+        StartCoroutine(SwitchAfterDelay(nextScreen, 1.0f));
     }
 
     System.Collections.IEnumerator SwitchAfterDelay(
-        GameObject nextScreen, float delay)
+    GameObject nextScreen, float delay)
     {
+        if (activeScreen != null)
+            SetVisible(activeScreen, false);
+
         yield return new WaitForSeconds(delay);
 
         if (activeScreen != null)
@@ -62,13 +63,27 @@ public class UIManager : MonoBehaviour
 
         activeScreen = nextScreen;
         activeScreen.SetActive(true);
-        SetVisible(activeScreen, true);
+
+        Animator anim = activeScreen.GetComponent<Animator>();
+        if (anim != null && anim.runtimeAnimatorController != null)
+        {
+            anim.Rebind();
+            anim.Update(0f);
+            anim.SetBool("IsVisible", true);
+        }
     }
 
     void SetVisible(GameObject screen, bool visible)
     {
         Animator anim = screen.GetComponent<Animator>();
         if (anim != null && anim.runtimeAnimatorController != null)
+        {
+            Debug.Log("Setting " + screen.name + " IsVisible to " + visible);
             anim.SetBool("IsVisible", visible);
+        }
+        else
+        {
+            Debug.LogWarning("No animator on " + screen.name);
+        }
     }
 }
