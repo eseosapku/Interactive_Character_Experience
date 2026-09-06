@@ -70,11 +70,17 @@ public class UIManager : MonoBehaviour
         }
     }
 
-    public void GoToScreen1() => ShowScreen(screen1);
+    public void GoToScreen1()
+    {
+        ShowScreen(screen1);
+        AudioManager.Instance.PlayMenuMusic();
+    }
     public void GoToScreen2() => ShowScreen(screen2);
     public void GoToScreen3()
     {
         ShowScreen(screen3);
+        // Fade out menu music when training starts
+        AudioManager.Instance.StopMenuMusic();
         TrainingManager.Instance.StartTraining();
     }
     public void GoToScreen4() => ShowScreen(screen4);
