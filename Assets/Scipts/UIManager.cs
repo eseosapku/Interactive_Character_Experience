@@ -2,28 +2,22 @@ using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
-
     public static UIManager Instance;
+
     [Header("Screens")]
     public GameObject screen1;
     public GameObject screen2;
     public GameObject screen3;
     public GameObject screen4;
     public GameObject completionScreen;
-    private GameObject activeScreen;
 
-    public void GoToScreen1() => ShowScreen(screen1);
-    public void GoToScreen2() => ShowScreen(screen2);
-    public void GoToScreen3() => ShowScreen(screen3);
-    public void GoToScreen4() => ShowScreen(screen4);
-    public void GoToCompletion() => ShowScreen(completionScreen);
+    private GameObject activeScreen;
 
     void Awake()
     {
         Instance = this;
     }
-    
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+
     void Start()
     {
         screen1.SetActive(false);
@@ -31,15 +25,10 @@ public class UIManager : MonoBehaviour
         screen3.SetActive(false);
         screen4.SetActive(false);
         completionScreen.SetActive(false);
+
         screen1.SetActive(true);
         SetVisible(screen1, true);
         activeScreen = screen1;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 
     public void ShowScreen(GameObject nextScreen)
@@ -47,15 +36,12 @@ public class UIManager : MonoBehaviour
         if (activeScreen != null)
             SetVisible(activeScreen, false);
 
-        StartCoroutine(SwitchAfterDelay(nextScreen, 1.0f));
+        StartCoroutine(SwitchAfterDelay(nextScreen, 0.6f));
     }
 
     System.Collections.IEnumerator SwitchAfterDelay(
-    GameObject nextScreen, float delay)
+        GameObject nextScreen, float delay)
     {
-        if (activeScreen != null)
-            SetVisible(activeScreen, false);
-
         yield return new WaitForSeconds(delay);
 
         if (activeScreen != null)
@@ -81,9 +67,15 @@ public class UIManager : MonoBehaviour
             Debug.Log("Setting " + screen.name + " IsVisible to " + visible);
             anim.SetBool("IsVisible", visible);
         }
-        else
-        {
-            Debug.LogWarning("No animator on " + screen.name);
-        }
     }
+
+    public void GoToScreen1() => ShowScreen(screen1);
+    public void GoToScreen2() => ShowScreen(screen2);
+    public void GoToScreen3()
+    {
+        ShowScreen(screen3);
+        TrainingManager.Instance.StartTraining();
+    }
+    public void GoToScreen4() => ShowScreen(screen4);
+    public void GoToCompletion() => ShowScreen(completionScreen);
 }

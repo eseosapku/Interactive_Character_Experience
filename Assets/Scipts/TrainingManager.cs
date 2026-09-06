@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 public class TrainingManager : MonoBehaviour
 {
@@ -11,15 +12,18 @@ public class TrainingManager : MonoBehaviour
     public Animator jamieAnimator;
     public Animator alexAnimator;
 
+    [Header("Scene Objects")]
+    public GameObject diagramBoard;
+    public GameObject marcusCharacter;
+    public GameObject jamieCharacter;
+    public GameObject alexCharacter;
+
     [Header("UI")]
     public TextMeshProUGUI stepTitleText;
     public Slider timelineSlider;
 
-    [Header("Steps")]
     private CPRStep[] steps;
-
     private int currentStep = 0;
-    private bool isPlaying = false;
 
     void Awake()
     {
@@ -28,6 +32,12 @@ public class TrainingManager : MonoBehaviour
 
     void Start()
     {
+        // Hide everything at start
+        if (diagramBoard != null) diagramBoard.SetActive(false);
+        if (marcusCharacter != null) marcusCharacter.SetActive(false);
+        if (jamieCharacter != null) jamieCharacter.SetActive(false);
+        if (alexCharacter != null) alexCharacter.SetActive(false);
+
         steps = new CPRStep[]
         {
             new CPRStep {
@@ -60,15 +70,25 @@ public class TrainingManager : MonoBehaviour
         UpdateUI();
     }
 
+    public void StartTraining()
+    {
+        diagramBoard.SetActive(true);
+        marcusCharacter.SetActive(true);
+        jamieCharacter.SetActive(false);
+        alexCharacter.SetActive(false);
+
+        currentStep = 0;
+        UpdateUI();
+        StartCoroutine(PlayMarcusSequence());
+    }
+
     public void OnPlayPressed()
     {
-        isPlaying = true;
         PlayCurrentStep();
     }
 
     public void OnPausePressed()
     {
-        isPlaying = false;
         marcusAnimator.speed = 0f;
         jamieAnimator.speed = 0f;
         alexAnimator.speed = 0f;
@@ -102,24 +122,53 @@ public class TrainingManager : MonoBehaviour
     {
         CPRStep step = steps[currentStep];
 
+        marcusCharacter.SetActive(false);
+        jamieCharacter.SetActive(false);
+        alexCharacter.SetActive(false);
+
         switch (step.character)
         {
             case "Marcus":
-                ResetAllTriggers(marcusAnimator);
-                marcusAnimator.SetTrigger(step.triggerName);
+                marcusCharacter.SetActive(true);
+                StartCoroutine(PlayMarcusSequence());
                 break;
             case "Jamie":
-                ResetAllTriggers(jamieAnimator);
+                jamieCharacter.SetActive(true);
                 jamieAnimator.SetTrigger(step.triggerName);
                 break;
             case "Alex":
-                ResetAllTriggers(alexAnimator);
+                alexCharacter.SetActive(true);
                 alexAnimator.SetTrigger("OnKneel");
                 Invoke("PlayAlexCPR", 1.5f);
                 break;
         }
 
         UpdateUI();
+    }
+
+    IEnumerator PlayMarcusSequence()
+    {
+        Debug.Log("Marcus Sequence Started");
+
+        marcusAnimator.speed = 1f;
+        marcusAnimator.ResetTrigger("OnTalk");
+        marcusAnimator.ResetTrigger("OnPoint");
+        marcusAnimator.ResetTrigger("OnWalk");
+
+        Debug.Log("Firing OnTalk");
+        marcusAnimator.SetTrigger("OnTalk");
+        yield return new WaitForSeconds(3f);
+
+        Debug.Log("Firing OnPoint");
+        marcusAnimator.SetTrigger("OnPoint");
+        yield return new WaitForSeconds(3f);
+
+        Debug.Log("Firing OnTalk again");
+        marcusAnimator.SetTrigger("OnTalk");
+        yield return new WaitForSeconds(3f);
+
+        Debug.Log("Firing OnWalk");
+        marcusAnimator.SetTrigger("OnWalk");
     }
 
     void PlayAlexCPR()
