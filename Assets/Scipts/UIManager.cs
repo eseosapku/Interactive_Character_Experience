@@ -26,7 +26,14 @@ public class UIManager : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        ShowScreen(screen1);
+        screen1.SetActive(false);
+        screen2.SetActive(false);
+        screen3.SetActive(false);
+        screen4.SetActive(false);
+        completionScreen.SetActive(false);
+        screen1.SetActive(true);
+        SetVisible(screen1, true);
+        activeScreen = screen1;
     }
 
     // Update is called once per frame
@@ -37,13 +44,31 @@ public class UIManager : MonoBehaviour
 
     public void ShowScreen(GameObject nextScreen)
     {
+        // Fade out current screen
         if (activeScreen != null)
-        {
-            activeScreen.GetComponent<Animator>()
-                        .SetBool("IsVisible", false);
-        }
+            SetVisible(activeScreen, false);
+
+        // Switch after outro plays
+        StartCoroutine(SwitchAfterDelay(nextScreen, 0.3f));
+    }
+
+    System.Collections.IEnumerator SwitchAfterDelay(
+        GameObject nextScreen, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (activeScreen != null)
+            activeScreen.SetActive(false);
+
         activeScreen = nextScreen;
-        activeScreen.GetComponent<Animator>()
-                    .SetBool("IsVisible", true);
+        activeScreen.SetActive(true);
+        SetVisible(activeScreen, true);
+    }
+
+    void SetVisible(GameObject screen, bool visible)
+    {
+        Animator anim = screen.GetComponent<Animator>();
+        if (anim != null && anim.runtimeAnimatorController != null)
+            anim.SetBool("IsVisible", visible);
     }
 }
