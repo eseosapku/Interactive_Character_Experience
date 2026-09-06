@@ -3613,11 +3613,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   backgroundMusic: {fileID: 73222450}
   trainingAudio: {fileID: 333628644}
-  menuMusicClip: {fileID: 8300000, guid: 4b41bde4b82ae2241965f9adbb710e71, type: 3}
   volumeSlider: {fileID: 2144835440}
   muteButton: {fileID: 1425119623}
   soundOnSprite: {fileID: -1557011705, guid: 054dd5583580b514ea78382b4680d01c, type: 3}
   soundOffSprite: {fileID: 1074880624, guid: ecfc523a214a55c46bcce940beb9e10d, type: 3}
+  menuMusicClip: {fileID: 8300000, guid: 4b41bde4b82ae2241965f9adbb710e71, type: 3}
+  trainingMusicClip: {fileID: 8300000, guid: 16ac077e09e807c4cae11a4a8c3ad6d3, type: 3}
 --- !u!4 &711548965
 Transform:
   m_ObjectHideFlags: 0

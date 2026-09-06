@@ -10,9 +10,6 @@ public class AudioManager : MonoBehaviour
     public AudioSource backgroundMusic;
     public AudioSource trainingAudio;
 
-    [Header("Music Clips")]
-    public AudioClip menuMusicClip;
-
     [Header("UI Controls")]
     public Slider volumeSlider;
     public UnityEngine.UI.Button muteButton;
@@ -20,6 +17,10 @@ public class AudioManager : MonoBehaviour
     [Header("Mute Button Images")]
     public Sprite soundOnSprite;
     public Sprite soundOffSprite;
+
+    [Header("Music Clips")]
+    public AudioClip menuMusicClip;
+    public AudioClip trainingMusicClip;
 
     private bool isMuted = false;
     private float lastVolume = 1f;
@@ -124,6 +125,25 @@ public class AudioManager : MonoBehaviour
 
         ApplyVolume();
         UpdateMuteButton();
+    }
+
+    public void PlayTrainingMusic()
+    {
+        if (backgroundMusic == null ||
+            trainingMusicClip == null) return;
+
+        // Stop menu music first
+        backgroundMusic.Stop();
+
+        backgroundMusic.clip = trainingMusicClip;
+        backgroundMusic.volume = isMuted ? 0f : lastVolume * 0.4f;
+        backgroundMusic.loop = true;
+        backgroundMusic.Play();
+    }
+
+    public void StopTrainingMusic()
+    {
+        StartCoroutine(FadeOut(backgroundMusic, 1f));
     }
 
     void ApplyVolume()

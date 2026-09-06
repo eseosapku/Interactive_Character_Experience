@@ -12,6 +12,8 @@ public class UIManager : MonoBehaviour
     public GameObject screen4;
     public GameObject completionScreen;
 
+
+
     private GameObject activeScreen;
 
     void Awake()
@@ -79,10 +81,21 @@ public class UIManager : MonoBehaviour
     public void GoToScreen3()
     {
         ShowScreen(screen3);
-        // Fade out menu music when training starts
         AudioManager.Instance.StopMenuMusic();
+        // Small delay so menu fades out before training music starts
+        StartCoroutine(StartTrainingDelayed());
+    }
+
+    System.Collections.IEnumerator StartTrainingDelayed()
+    {
+        yield return new WaitForSeconds(1f);
+        AudioManager.Instance.PlayTrainingMusic();
         TrainingManager.Instance.StartTraining();
     }
     public void GoToScreen4() => ShowScreen(screen4);
-    public void GoToCompletion() => ShowScreen(completionScreen);
+    public void GoToCompletion()
+    {
+        AudioManager.Instance.StopTrainingMusic();
+        ShowScreen(completionScreen);
+    }
 }
