@@ -26,6 +26,10 @@ public class TrainingManager : MonoBehaviour
     public AudioSource marcusAudioSource;
     public AudioClip marcusSpeechClip;
 
+    [Header("Start Positions")]
+    public Transform jamieStartPosition;
+    public Transform alexStartPosition;
+
     private MarcusSection[] marcusSections;
     private int currentSection = 0;
     private bool isPaused = false;
@@ -100,19 +104,10 @@ public class TrainingManager : MonoBehaviour
         jamieCharacter.SetActive(false);
         alexCharacter.SetActive(false);
 
-        // Reset positions
-        jamieCharacter.transform.position =
-            new Vector3(1f, 0f, 0f);
-        alexCharacter.transform.position =
-            new Vector3(-1f, 0f, 0f);
-        jamieCharacter.transform.rotation =
-            Quaternion.Euler(0, 180, 0);
-        alexCharacter.transform.rotation =
-            Quaternion.Euler(0, 180, 0);
-
         currentSection = 0;
         isPaused = false;
 
+        CameraManager.Instance.MoveTOMarcusView();
         PlaySection(currentSection);
     }
 
@@ -205,19 +200,15 @@ public class TrainingManager : MonoBehaviour
         jamieCharacter.SetActive(true);
         alexCharacter.SetActive(true);
 
-        // Reset positions side by side
-        jamieCharacter.transform.position =
-            new Vector3(1f, 0f, 0f);
-        alexCharacter.transform.position =
-            new Vector3(-1f, 0f, 0f);
-        jamieCharacter.transform.rotation =
-            Quaternion.Euler(0, 180, 0);
-        alexCharacter.transform.rotation =
-            Quaternion.Euler(0, 180, 0);
+        jamieCharacter.transform.position = jamieStartPosition.position;
+        jamieCharacter.transform.rotation = jamieStartPosition.rotation;
+        alexCharacter.transform.position = alexStartPosition.position;
+        alexCharacter.transform.rotation = alexStartPosition.rotation;
 
         stepTitleText.text = "Demonstration — Watch Carefully";
         timelineSlider.value = 1f;
 
+        CameraManager.Instance.MoveToDemonstrationView();
         activeCoroutine = StartCoroutine(DemonstrationSequence());
     }
 
