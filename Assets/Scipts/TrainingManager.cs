@@ -22,6 +22,10 @@ public class TrainingManager : MonoBehaviour
     public TextMeshProUGUI stepTitleText;
     public Slider timelineSlider;
 
+    [Header("Audio")]
+    public AudioSource marcusAudioSource;
+    public AudioClip marcusSpeechClip;
+
     private CPRStep[] steps;
     private int currentStep = 0;
 
@@ -155,20 +159,37 @@ public class TrainingManager : MonoBehaviour
         marcusAnimator.ResetTrigger("OnPoint");
         marcusAnimator.ResetTrigger("OnWalk");
 
-        Debug.Log("Firing OnTalk");
-        marcusAnimator.SetTrigger("OnTalk");
-        yield return new WaitForSeconds(3f);
+        // Play audio straight through from beginning
+        marcusAudioSource.clip = marcusSpeechClip;
+        marcusAudioSource.Play();
 
-        Debug.Log("Firing OnPoint");
+        // Section 1 — Talking (0 to 19 seconds)
+        marcusAnimator.SetTrigger("OnTalk");
+        yield return new WaitForSeconds(19f);
+
+        // Section 2 — Pointing (19 to 34 seconds)
         marcusAnimator.SetTrigger("OnPoint");
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(15f);
 
-        Debug.Log("Firing OnTalk again");
+        // Section 3 — Talking (34 to 54.1 seconds)
         marcusAnimator.SetTrigger("OnTalk");
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(20.1f);
 
-        Debug.Log("Firing OnWalk");
+        // Section 4 — Pointing (54.1 to 1min14sec)
+        marcusAnimator.SetTrigger("OnPoint");
+        yield return new WaitForSeconds(19.9f);
+
+        // Section 5 — Talking (1min14sec to 1min35sec)
+        marcusAnimator.SetTrigger("OnTalk");
+        yield return new WaitForSeconds(21f);
+
+        // Closing — Walk away (1min35sec to 1min41sec)
         marcusAnimator.SetTrigger("OnWalk");
+        yield return new WaitForSeconds(6f);
+
+        // Sequence complete — move to next step
+        Debug.Log("Marcus Sequence Complete");
+        OnNextPressed();
     }
 
     void PlayAlexCPR()
