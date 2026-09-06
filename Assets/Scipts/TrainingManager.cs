@@ -26,8 +26,12 @@ public class TrainingManager : MonoBehaviour
     public AudioSource marcusAudioSource;
     public AudioClip marcusSpeechClip;
 
-    private CPRStep[] steps;
-    private int currentStep = 0;
+    // Each marcus section defined by
+    // title, animation trigger, audio start, audio end
+    private MarcusSection[] marcusSections;
+    private int currentSection = 0;
+    private bool isPaused = false;
+    private Coroutine activeCoroutine;
 
     void Awake()
     {
@@ -36,42 +40,51 @@ public class TrainingManager : MonoBehaviour
 
     void Start()
     {
-        // Hide everything at start
         if (diagramBoard != null) diagramBoard.SetActive(false);
         if (marcusCharacter != null) marcusCharacter.SetActive(false);
         if (jamieCharacter != null) jamieCharacter.SetActive(false);
         if (alexCharacter != null) alexCharacter.SetActive(false);
 
-        steps = new CPRStep[]
+        // Define each section
+        marcusSections = new MarcusSection[]
         {
-            new CPRStep {
-                stepTitle = "Step 1 of 5 — Scene is Safe",
-                character = "Marcus",
-                triggerName = "OnTalk"
+            new MarcusSection {
+                stepTitle = "Step 1 — Scene Safety",
+                trigger = "OnTalk",
+                audioStart = 0f,
+                audioEnd = 19f
             },
-            new CPRStep {
-                stepTitle = "Step 2 of 5 — Check for Breathing",
-                character = "Marcus",
-                triggerName = "OnPoint"
+            new MarcusSection {
+                stepTitle = "Step 2 — Check Responsiveness",
+                trigger = "OnPoint",
+                audioStart = 19f,
+                audioEnd = 34f
             },
-            new CPRStep {
-                stepTitle = "Step 3 of 5 — Call for Help",
-                character = "Marcus",
-                triggerName = "OnTalk"
+            new MarcusSection {
+                stepTitle = "Step 3 — Call for Help",
+                trigger = "OnTalk",
+                audioStart = 34f,
+                audioEnd = 54.1f
             },
-            new CPRStep {
-                stepTitle = "Step 4 of 5 — Patient Collapses",
-                character = "Jamie",
-                triggerName = "OnCollapse"
+            new MarcusSection {
+                stepTitle = "Step 4 — CPR Technique",
+                trigger = "OnPoint",
+                audioStart = 54.1f,
+                audioEnd = 74f
             },
-            new CPRStep {
-                stepTitle = "Step 5 of 5 — Perform CPR",
-                character = "Alex",
-                triggerName = "OnCPR"
+            new MarcusSection {
+                stepTitle = "Step 5 — Rescue Breaths",
+                trigger = "OnTalk",
+                audioStart = 74f,
+                audioEnd = 95f
+            },
+            new MarcusSection {
+                stepTitle = "Now watch the demonstration...",
+                trigger = "OnWalk",
+                audioStart = 95f,
+                audioEnd = 101f
             }
         };
-
-        UpdateUI();
     }
 
     public void StartTraining()
@@ -81,145 +94,152 @@ public class TrainingManager : MonoBehaviour
         jamieCharacter.SetActive(false);
         alexCharacter.SetActive(false);
 
-        currentStep = 0;
-        UpdateUI();
-        StartCoroutine(PlayMarcusSequence());
+        currentSection = 0;
+        isPaused = false;
+
+        PlaySection(currentSection);
     }
 
-    public void OnPlayPressed()
+    void PlaySection(int index)
     {
-        PlayCurrentStep();
-    }
+        if (index >= marcusSections.Length) return;
 
-    public void OnPausePressed()
-    {
-        marcusAnimator.speed = 0f;
-        jamieAnimator.speed = 0f;
-        alexAnimator.speed = 0f;
-    }
+        MarcusSection section = marcusSections[index];
 
-    public void OnNextPressed()
-    {
-        if (currentStep < steps.Length - 1)
-        {
-            currentStep++;
-            ResumeAnimators();
-            PlayCurrentStep();
-        }
-        else
-        {
-            UIManager.Instance.GoToCompletion();
-        }
-    }
+        // Stop any running coroutine
+        if (activeCoroutine != null)
+            StopCoroutine(activeCoroutine);
 
-    public void OnPreviousPressed()
-    {
-        if (currentStep > 0)
-        {
-            currentStep--;
-            ResumeAnimators();
-            PlayCurrentStep();
-        }
-    }
-
-    void PlayCurrentStep()
-    {
-        CPRStep step = steps[currentStep];
-
-        marcusCharacter.SetActive(false);
-        jamieCharacter.SetActive(false);
-        alexCharacter.SetActive(false);
-
-        switch (step.character)
-        {
-            case "Marcus":
-                marcusCharacter.SetActive(true);
-                StartCoroutine(PlayMarcusSequence());
-                break;
-            case "Jamie":
-                jamieCharacter.SetActive(true);
-                jamieAnimator.SetTrigger(step.triggerName);
-                break;
-            case "Alex":
-                alexCharacter.SetActive(true);
-                alexAnimator.SetTrigger("OnKneel");
-                Invoke("PlayAlexCPR", 1.5f);
-                break;
-        }
-
-        UpdateUI();
-    }
-
-    IEnumerator PlayMarcusSequence()
-    {
-        Debug.Log("Marcus Sequence Started");
-
+        // Reset triggers
         marcusAnimator.speed = 1f;
         marcusAnimator.ResetTrigger("OnTalk");
         marcusAnimator.ResetTrigger("OnPoint");
         marcusAnimator.ResetTrigger("OnWalk");
 
-        // Play audio straight through from beginning
+        // Update UI
+        stepTitleText.text = section.stepTitle;
+        timelineSlider.value = (float)index / (marcusSections.Length - 1);
+
+        // Play animation
+        marcusAnimator.SetTrigger(section.trigger);
+
+        // Play audio from correct timestamp
         marcusAudioSource.clip = marcusSpeechClip;
+        marcusAudioSource.time = section.audioStart;
         marcusAudioSource.Play();
 
-        // Section 1 — Talking (0 to 19 seconds)
-        marcusAnimator.SetTrigger("OnTalk");
-        yield return new WaitForSeconds(19f);
-
-        // Section 2 — Pointing (19 to 34 seconds)
-        marcusAnimator.SetTrigger("OnPoint");
-        yield return new WaitForSeconds(15f);
-
-        // Section 3 — Talking (34 to 54.1 seconds)
-        marcusAnimator.SetTrigger("OnTalk");
-        yield return new WaitForSeconds(20.1f);
-
-        // Section 4 — Pointing (54.1 to 1min14sec)
-        marcusAnimator.SetTrigger("OnPoint");
-        yield return new WaitForSeconds(19.9f);
-
-        // Section 5 — Talking (1min14sec to 1min35sec)
-        marcusAnimator.SetTrigger("OnTalk");
-        yield return new WaitForSeconds(21f);
-
-        // Closing — Walk away (1min35sec to 1min41sec)
-        marcusAnimator.SetTrigger("OnWalk");
-        yield return new WaitForSeconds(6f);
-
-        // Sequence complete — move to next step
-        Debug.Log("Marcus Sequence Complete");
-        OnNextPressed();
+        // Start coroutine to auto advance
+        float duration = section.audioEnd - section.audioStart;
+        activeCoroutine = StartCoroutine(
+            WaitThenAdvance(duration, index));
     }
 
-    void PlayAlexCPR()
+    IEnumerator WaitThenAdvance(float duration, int index)
     {
-        alexAnimator.SetTrigger("OnCPR");
-    }
+        float elapsed = 0f;
 
-    void ResetAllTriggers(Animator anim)
-    {
-        anim.speed = 1f;
-        foreach (AnimatorControllerParameter p in anim.parameters)
+        while (elapsed < duration)
         {
-            if (p.type == AnimatorControllerParameterType.Trigger)
-                anim.ResetTrigger(p.name);
+            if (!isPaused)
+                elapsed += Time.deltaTime;
+
+            yield return null;
+        }
+
+        // Stop audio at end of section
+        marcusAudioSource.Stop();
+
+        // If last section — go to demonstration
+        if (index >= marcusSections.Length - 1)
+        {
+            StartDemonstration();
+        }
+        // Otherwise wait for user to press Next
+        // Auto advance removed — user controls it
+    }
+
+    void StartDemonstration()
+    {
+        marcusCharacter.SetActive(false);
+        diagramBoard.SetActive(false);
+        jamieCharacter.SetActive(true);
+        alexCharacter.SetActive(true);
+
+        stepTitleText.text = "Demonstration — Watch Carefully";
+        timelineSlider.value = 1f;
+
+        // Jamie walks in then collapses
+        StartCoroutine(DemonstrationSequence());
+    }
+
+    IEnumerator DemonstrationSequence()
+    {
+        // Jamie walks in
+        jamieAnimator.SetTrigger("OnCollapse");
+        yield return new WaitForSeconds(3f);
+
+        // Alex walks in and kneels
+        alexAnimator.SetTrigger("OnKneel");
+        yield return new WaitForSeconds(2f);
+
+        // Alex performs CPR
+        alexAnimator.SetTrigger("OnCPR");
+        yield return new WaitForSeconds(5f);
+
+        // Jamie wakes up
+        jamieAnimator.SetTrigger("OnRevived");
+        yield return new WaitForSeconds(3f);
+
+        // Go to completion screen
+        UIManager.Instance.GoToCompletion();
+    }
+
+    // ── Button handlers ────────────────────────
+
+    public void OnPlayPressed()
+    {
+        if (isPaused)
+        {
+            isPaused = false;
+            marcusAnimator.speed = 1f;
+            marcusAudioSource.UnPause();
         }
     }
 
-    void ResumeAnimators()
+    public void OnPausePressed()
     {
-        marcusAnimator.speed = 1f;
-        jamieAnimator.speed = 1f;
-        alexAnimator.speed = 1f;
+        isPaused = true;
+        marcusAnimator.speed = 0f;
+        marcusAudioSource.Pause();
     }
 
-    void UpdateUI()
+    public void OnNextPressed()
     {
-        if (stepTitleText != null)
-            stepTitleText.text = steps[currentStep].stepTitle;
-
-        if (timelineSlider != null)
-            timelineSlider.value = (float)currentStep / (steps.Length - 1);
+        if (currentSection < marcusSections.Length - 1)
+        {
+            currentSection++;
+            isPaused = false;
+            PlaySection(currentSection);
+        }
     }
+
+    public void OnPreviousPressed()
+    {
+        if (currentSection > 0)
+        {
+            currentSection--;
+            isPaused = false;
+            PlaySection(currentSection);
+        }
+    }
+}
+
+// Data container for each section
+[System.Serializable]
+public class MarcusSection
+{
+    public string stepTitle;
+    public string trigger;
+    public float audioStart;
+    public float audioEnd;
 }
